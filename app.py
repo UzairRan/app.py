@@ -8,11 +8,17 @@ tickers = ['AEE', 'REZ', '1AE', '1MC', 'NRZ']
 
 # Function to retrieve announcements for a ticker
 def get_announcements(ticker):
-    url = f"https://www.asx.com.au/asx/1/company/{ticker}/announcements?count=20&market_sensitive=false"
-    response = requests.get(url)
-    if response.status_code == 200:
-        return response.json().get('announcements', [])
-    else:
+    url = f"https://www.asx.com.au/asx/1/company/{TICKER}/announcements?count=20&market_sensitive=false"
+    try:
+        response = requests.get(url)
+        response.raise_for_status()  # Check for HTTP errors
+        data = response.json()
+        return data.get('announcements', [])
+    except requests.exceptions.RequestException as e:
+        st.error(f"Request error: {e}")
+        return []
+    except ValueError as e:
+        st.error(f"JSON decode error: {e}")
         return []
 
 # Streamlit app
@@ -38,7 +44,7 @@ else:
 trading_halt_tickers = []
 for ticker in tickers:
     announcements = get_announcements(ticker)
-    if any("Trading Halt" in announcement['header'] for announcement in announcements):
+    if any("Trading Halt" in announcement.get('header', '') for announcement in announcements):
         trading_halt_tickers.append(ticker)
 
 if trading_halt_tickers:
