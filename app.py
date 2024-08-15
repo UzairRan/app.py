@@ -1,72 +1,51 @@
 # app.py
 
-# Imports Necessary libraries
+# Imports
 import streamlit as st
 import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+
+# Function to fetch announcements
+def fetch_announcements(ticker):
+    url = f'https://www.asx.com.au/asx/1/company/{ticker}/announcements?count=20&market_sensitive=false'
+    response = requests.get(url)
+    # Check if the response is HTML or JSON
+    if response.headers['Content-Type'] == 'text/html':
+        # Parse HTML to extract announcements
+        soup = BeautifulSoup(response.text, 'html.parser')
+        announcements = []
+        for item in soup.find_all('div', class_='announcement-item'):
+            date = item.find('span', class_='date').text
+            title = item.find('a', class_='announcement-title').text
+            link = item.find('a', class_='announcement-title')['href']
+            announcements.append({'Date': date, 'Title': title, 'Link': link})
+        return pd.DataFrame(announcements)
+    else:
+        # Assuming JSON response
+        return pd.json_normalize(response.json())
 
 # List of ticker symbols
 tickers = ['AEE', 'REZ', '1AE', '1MC', 'NRZ']
 
-# Function to retrieve announcements for a ticker
-def get_announcements(ticker):
-    url = f"https://www.asx.com.au/asx/1/company/{ticker}/announcements?count=20&market_sensitive=false"
-    
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'
-    }
-    
-    try:
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()  # Check for HTTP errors
-        
-        # Debugging: Print raw response text
-        st.write("Raw response:", response.text[:2000])  # Print the first 2000 characters for brevity
-
-        # Attempt to parse JSON response
-        try:
-            data = response.json()
-            if 'announcements' in data:
-                return data['announcements']
-            else:
-                st.error(f"No 'announcements' key in the response. Response data: {data}")
-                return []
-        except ValueError:
-            st.error("Error: The response is not in JSON format.")
-            return []
-
-    except requests.exceptions.RequestException as e:
-        st.error(f"An error occurred: {e}")
-        return []
-
 # Streamlit app
-st.title("ASX Announcements Viewer")
+st.title('ASX Announcements Viewer')
 
-# Select a ticker symbol
-selected_ticker = st.selectbox("Select a Ticker", tickers)
+# Select ticker symbol
+selected_ticker = st.selectbox('Select Ticker Symbol', tickers)
 
-# Retrieve announcements for the selected ticker
-announcements = get_announcements(selected_ticker)
-
-if announcements:
-    st.write(f"**Recent Announcements for {selected_ticker}:**")
-    for announcement in announcements:
-        st.write(f"**Date:** {announcement.get('date', 'N/A')}")
-        st.write(f"**Title:** {announcement.get('header', 'N/A')}")
-        st.write(f"**Link:** [View Announcement](https://www.asx.com.au/asxpdf/{announcement.get('id', 'N/A')}.pdf)")
-        st.write("---")
-else:
-    st.write("No announcements found.")
-
-# Identify tickers with 'Trading Halt' announcements
-trading_halt_tickers = []
-for ticker in tickers:
-    announcements = get_announcements(ticker)
-    if any("Trading Halt" in announcement.get('header', '') for announcement in announcements):
-        trading_halt_tickers.append(ticker)
-
-if trading_halt_tickers:
-    st.write("**Tickers with 'Trading Halt' announcements:**")
-    st.write(", ".join(trading_halt_tickers))
-else:
-    st.write("No tickers with 'Trading Halt' announcements.")
-
+# Fetch and display announcements
+if st.button('Fetch Announcements'):
+    df = fetch_announcements(selected_ticker)
+    
+    if not df.empty:
+        st.write(f"Recent Announcements for {selected_ticker}:")
+        st.dataframe(df)
+        
+        # Identify "Trading Halt" announcements
+        if any("Trading Halt" in title for title in df['Title']):
+            st.markdown(f"**Ticker {selected_ticker} has a 'Trading Halt' announcement.**")
+        else:
+            st.markdown(f"**Ticker {selected_ticker} does not have a 'Trading Halt' announcement.**")
+    else:
+        st.write("No announcements found or there was an error fetching the data.")
