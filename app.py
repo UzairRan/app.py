@@ -7,18 +7,15 @@ import requests
 tickers = ['AEE', 'REZ', '1AE', '1MC', 'NRZ']
 
 # Function to retrieve announcements for a ticker
+# Function to retrieve announcements for a ticker
 def get_announcements(ticker):
-    url = f"https://www.asx.com.au/asx/1/company/{TICKER}/announcements?count=20&market_sensitive=false"
+    url = f"https://www.asx.com.au/asx/1/company/{ticker}/announcements?count=20&market_sensitive=false"
     try:
         response = requests.get(url)
         response.raise_for_status()  # Check for HTTP errors
-        data = response.json()
-        return data.get('announcements', [])
+        return response.json().get('announcements', [])
     except requests.exceptions.RequestException as e:
-        st.error(f"Request error: {e}")
-        return []
-    except ValueError as e:
-        st.error(f"JSON decode error: {e}")
+        st.error(f"An error occurred: {e}")
         return []
 
 # Streamlit app
