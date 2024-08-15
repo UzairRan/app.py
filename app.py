@@ -9,21 +9,31 @@ import pandas as pd
 # Function to fetch announcements
 def fetch_announcements(ticker):
     url = f'https://www.asx.com.au/asx/1/company/{ticker}/announcements?count=20&market_sensitive=false'
-    response = requests.get(url)
-    # Check if the response is HTML or JSON
-    if response.headers['Content-Type'] == 'text/html':
-        # Parse HTML to extract announcements
-        soup = BeautifulSoup(response.text, 'html.parser')
-        announcements = []
-        for item in soup.find_all('div', class_='announcement-item'):
-            date = item.find('span', class_='date').text
-            title = item.find('a', class_='announcement-title').text
-            link = item.find('a', class_='announcement-title')['href']
-            announcements.append({'Date': date, 'Title': title, 'Link': link})
-        return pd.DataFrame(announcements)
-    else:
-        # Assuming JSON response
-        return pd.json_normalize(response.json())
+    try:
+        response = requests.get(url)
+        response.raise_for_status()  # Check for HTTP request errors
+        
+        # Display response headers and a snippet of the response text for debugging
+        st.write("Response Headers:", response.headers)
+        st.write("Response Snippet:", response.text[:1000])  # Show first 1000 characters of the response
+        
+        # Check if the response is HTML or JSON
+        if 'text/html' in response.headers['Content-Type']:
+            # Parse HTML to extract announcements
+            soup = BeautifulSoup(response.text, 'html.parser')
+            announcements = []
+            for item in soup.find_all('div', class_='announcement-item'):
+                date = item.find('span', class_='date').text.strip()
+                title = item.find('a', class_='announcement-title').text.strip()
+                link = item.find('a', class_='announcement-title')['href']
+                announcements.append({'Date': date, 'Title': title, 'Link': link})
+            return pd.DataFrame(announcements)
+        else:
+            # Assuming JSON response
+            return pd.json_normalize(response.json())
+    except requests.exceptions.RequestException as e:
+        st.error(f"Request failed: {e}")
+        return pd.DataFrame()
 
 # List of ticker symbols
 tickers = ['AEE', 'REZ', '1AE', '1MC', 'NRZ']
