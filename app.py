@@ -9,8 +9,11 @@ import pandas as pd
 # Function to fetch announcements
 def fetch_announcements(ticker):
     url = f'https://www.asx.com.au/asx/1/company/{ticker}/announcements?count=20&market_sensitive=false'
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    }
     try:
-        response = requests.get(url)
+        response = requests.get(url, headers=headers)
         response.raise_for_status()  # Check for HTTP request errors
         
         # Display response headers and a snippet of the response text for debugging
@@ -34,6 +37,7 @@ def fetch_announcements(ticker):
     except requests.exceptions.RequestException as e:
         st.error(f"Request failed: {e}")
         return pd.DataFrame()
+
 
 # List of ticker symbols
 tickers = ['AEE', 'REZ', '1AE', '1MC', 'NRZ']
