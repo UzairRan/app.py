@@ -3,7 +3,6 @@
 # Imports
 import streamlit as st
 import requests
-from bs4 import BeautifulSoup
 import pandas as pd
 
 # Function to fetch announcements
@@ -20,23 +19,19 @@ def fetch_announcements(ticker):
         st.write("Response Headers:", response.headers)
         st.write("Response Snippet:", response.text[:2000])  # Show first 2000 characters of the response
         
-        # Check if the response is HTML
-        if 'text/html' in response.headers['Content-Type']:
-            # Parse HTML to extract announcements
-            soup = BeautifulSoup(response.text, 'html.parser')
+        # Check if the response is JSON
+        if 'application/json' in response.headers['Content-Type']:
+            data = response.json()
             announcements = []
-            # Adjusted to match correct selectors
-            items = soup.find_all('div', class_='col-12 col-md-4 mb-3')
-            if not items:
-                st.write("No announcements found. Please check the URL or class names.")
-            for item in items:
-                date = item.find('div', class_='text-muted').text.strip() if item.find('div', class_='text-muted') else 'No Date'
-                title = item.find('a', class_='text-dark').text.strip() if item.find('a', class_='text-dark') else 'No Title'
-                link = item.find('a', class_='text-dark')['href'] if item.find('a', class_='text-dark') else 'No Link'
-                announcements.append({'Date': date, 'Title': title, 'Link': link})
+            for item in data['data']:
+                announcements.append({
+                    'Date': item['document_date'],
+                    'Title': item['header'],
+                    'Link': item['url']
+                })
             return pd.DataFrame(announcements)
         else:
-            st.write("Unexpected response format. Expected HTML but received something else.")
+            st.write("Unexpected response format. Expected JSON but received something else.")
             return pd.DataFrame()
     except requests.exceptions.RequestException as e:
         st.error(f"Request failed: {e}")
