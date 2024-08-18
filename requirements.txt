@@ -2,7 +2,8 @@ streamlit
 requests
 beautifulsoup4
 pandas
-requests_html
+httpx
+
 
 
 
