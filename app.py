@@ -25,14 +25,14 @@ def fetch_announcements(ticker):
             # Parse HTML to extract announcements
             soup = BeautifulSoup(response.text, 'html.parser')
             announcements = []
-            # Ensure we have the right selectors
-            items = soup.find_all('div', class_='announcement-item')
+            # Adjusted to match correct selectors
+            items = soup.find_all('div', class_='col-12 col-md-4 mb-3')
             if not items:
                 st.write("No announcements found. Please check the URL or class names.")
             for item in items:
-                date = item.find('span', class_='date').text.strip() if item.find('span', class_='date') else 'No Date'
-                title = item.find('a', class_='announcement-title').text.strip() if item.find('a', class_='announcement-title') else 'No Title'
-                link = item.find('a', class_='announcement-title')['href'] if item.find('a', class_='announcement-title') else 'No Link'
+                date = item.find('div', class_='text-muted').text.strip() if item.find('div', class_='text-muted') else 'No Date'
+                title = item.find('a', class_='text-dark').text.strip() if item.find('a', class_='text-dark') else 'No Title'
+                link = item.find('a', class_='text-dark')['href'] if item.find('a', class_='text-dark') else 'No Link'
                 announcements.append({'Date': date, 'Title': title, 'Link': link})
             return pd.DataFrame(announcements)
         else:
