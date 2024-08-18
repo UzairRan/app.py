@@ -5,12 +5,16 @@ import httpx
 from bs4 import BeautifulSoup
 import pandas as pd
 import streamlit as st
+import time  
 
 # Function to fetch announcements using httpx and BeautifulSoup
 def fetch_announcements(ticker):
     url = f'https://www.asx.com.au/asx/1/company/{ticker}/announcements?count=20&market_sensitive=false'
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Connection': 'keep-alive'
     }
     try:
         response = httpx.get(url, headers=headers)
@@ -53,6 +57,9 @@ selected_ticker = st.selectbox('Select Ticker Symbol', tickers)
 # Fetch and display announcements
 if st.button('Fetch Announcements'):
     df = fetch_announcements(selected_ticker)
+    
+    # Introduce a small delay to avoid triggering rate limits
+    time.sleep(2)
     
     if not df.empty:
         st.write(f"Recent Announcements for {selected_ticker}:")
